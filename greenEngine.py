@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, './greenvisualization')
+sys.path.insert(1, './greenLanguage')
 from barchart import barchart
 
 test = barchart()

@@ -1,5 +1,5 @@
-INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF = (
-    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', 'EOF'
+INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF, FILE, CHART, COLUMN, TEXT= (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', 'EOF', 'FILE', 'CHART', 'COLUMN', 'TEXT'
 )
 
 
@@ -31,7 +31,7 @@ class Lexer(object):
         self.text = text
         # self.pos is an index into self.text
         self.pos = 0
-        self.current_char = self.text[self.pos]
+        self.current_char = self.text
 
     def error(self):
         raise Exception('Invalid character')
@@ -56,6 +56,14 @@ class Lexer(object):
             self.advance()
         return int(result)
 
+    def string(self):
+        result = ''
+        while self.current_char is not None:
+            result += self.current_char
+            self.advance()
+        return str(result)
+
+
     def get_next_token(self):
         """Lexical analyzer (also known as scanner or tokenizer)
 
@@ -70,6 +78,9 @@ class Lexer(object):
 
             if self.current_char.isdigit():
                 return Token(INTEGER, self.integer())
+
+            if isinstance(self.current_char, str):
+                return Token(TEXT, self.string())
 
             if self.current_char == '+':
                 self.advance()
@@ -95,6 +106,10 @@ class Lexer(object):
                 self.advance()
                 return Token(RPAREN, ')')
 
+            if self.current_char == 'FILE':
+                #self.advance()
+                return Token(FILE, 'FILE')
+
             self.error()
 
         return Token(EOF, None)
@@ -118,6 +133,11 @@ class BinOp(AST):
 
 
 class Num(AST):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+
+class Text(AST):
     def __init__(self, token):
         self.token = token
         self.value = token.value
@@ -153,6 +173,10 @@ class Parser(object):
             node = self.expr()
             self.eat(RPAREN)
             return node
+        elif token.type == FILE:
+            self.eat(TEXT)
+            return Text(token)
+
 
     def term(self):
         """term : factor ((MUL | DIV) factor)*"""
@@ -177,12 +201,14 @@ class Parser(object):
         """
         node = self.term()
 
-        while self.current_token.type in (PLUS, MINUS):
+        while self.current_token.type in (PLUS, MINUS, FILE):
             token = self.current_token
             if token.type == PLUS:
                 self.eat(PLUS)
             elif token.type == MINUS:
                 self.eat(MINUS)
+            elif token.type == FILE:
+                self.eat(FILE)
 
             node = BinOp(left=node, op=token, right=self.term())
 
@@ -221,8 +247,13 @@ class Interpreter(NodeVisitor):
             return self.visit(node.left) * self.visit(node.right)
         elif node.op.type == DIV:
             return self.visit(node.left) / self.visit(node.right)
+        elif node.op.type == FILE:
+            print self.visit_Text(node.right)
 
     def visit_Num(self, node):
+        return node.value
+
+    def visit_Text(self, node):
         return node.value
 
     def interpret(self):
