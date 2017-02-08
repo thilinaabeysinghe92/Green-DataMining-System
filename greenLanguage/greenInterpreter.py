@@ -1,4 +1,6 @@
-INTEGER, PLUS, EOF, FILE = 'INTERGER', 'PLUS', 'EOF','FILE'
+import sys
+sys.path.insert(0, '../greenvisualization')
+from barchart import barchart
 
 class Token(object):
 	def __init__(self ,type ,name ,value):
@@ -23,14 +25,16 @@ class Interpreter(object):
 
 
 			if keywords[0] == 'file':
-				self.name = keywords[1]
-				self.operation = keywords[2]
-				self.value = keywords[3]
-				self.execute(keywords)
+				filename = keywords[1]
+				columnname = keywords[2]
+				print("I got file %s " % filename)
+				bar_chart = barchart()
+				bar_chart.setFile(filename)
+				xheadrs = [columnname]
+				bar_chart.setX(xheadrs)
+				bar_chart.plotGraph()
 
-	def execute(self, line):
-		if line[0] == 'file':
-			print("I got file %s " % line[1])
+			
 
 def main():
 	while True:
